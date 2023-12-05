@@ -9,11 +9,12 @@ typedef struct super_duper_stack{
 } super_duper_stack;
 
 super_duper_stack *__m = NULL;
-long long int __stksz = -1;
-long long int __ocpdsz = -1;
+long long int __stksz = 0;
+long long int __ocpdsz = 0;
 
 int create(int size, int num_pages);
 int get_free_space();
+int get_max_block_size();
 mem_handle_t alloc(int block_size);
 int free(mem_handle_t h);
 int destroy();
@@ -30,6 +31,7 @@ void setup_memory_manager(memory_manager_t *mm){
     mm->free = free;
     mm->destroy = destroy;
     mm->get_free_space = get_free_space;
+    mm->get_max_block_size = get_free_space;
 }
 
 int rm_stack(){
@@ -41,21 +43,22 @@ int rm_stack(){
     free(__m->mmt);
     free(__m);
     __m = NULL;
-    __ocpdsz = -1;
-    __stksz = -1;
+    __ocpdsz = 0;
+    __stksz = 0;
     return 1;
 }
 
 int free_block(mem_handle_t h){
     while(__m->child != NULL) __m = __m->child;
     super_duper_stack *rm_block = __m;
-    if(rm_block->mmt->addr != h.addr || rm_block->mmt->size != h.size) return 0;
+    if(rm_block == NULL || rm_block->mmt == NULL) return 0;
     __ocpdsz -= rm_block->mmt->size;
     __m = __m->parent;
     free(rm_block->mmt);
     rm_block->child = NULL;
     rm_block->parent = NULL;
     free(rm_block);
+    rm_block = NULL;
     __m->child = NULL;
     return 1;
     // int is_exist = 0;
@@ -85,15 +88,14 @@ mem_handle_t alloc_block(int block_size){
     if(!__m->parent){
         new_block->mmt->addr = 0;
         new_block->mmt->size = block_size;
-        printf("allocated < %d | %d >\n", new_block->mmt->addr, new_block->mmt->size);
+        // printf("allocated < %d | %d >\n", new_block->mmt->addr, new_block->mmt->size);
     }
     else{
         new_block->mmt->addr = __m->mmt->size + __m->mmt->addr;
         new_block->mmt->size = block_size;
-        printf("allocated < %d | %d >\n", new_block->mmt->addr, new_block->mmt->size);
+        // printf("allocated < %d | %d >\n", new_block->mmt->addr, new_block->mmt->size);
     }
-    
-
+    __ocpdsz += new_block->mmt->size;
     return mem_handle_t(new_block->mmt->addr, new_block->mmt->size);
 }
 
