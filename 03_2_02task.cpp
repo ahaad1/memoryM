@@ -18,12 +18,23 @@ int get_max_block_size();
 mem_handle_t alloc(int block_size);
 int free(mem_handle_t h);
 int destroy();
+void print_blocks();
 
 int check_stack(super_duper_stack *block);
 int init_stack(int size, int num_pages);
 mem_handle_t alloc_block(int block_size);
 int free_block(mem_handle_t h);
 int rm_stack();
+
+void print_blocks(){
+    if(!check_stack(__m)) return;
+    while(__m->parent != NULL) __m = __m->parent;
+    // printf("\n");
+    while(__m->child != NULL){
+        __m = __m->child;
+        printf("%d %d\n", __m->mmt->addr, __m->mmt->size);
+    }
+}
 
 void setup_memory_manager(memory_manager_t *mm){
     mm->create = create;
@@ -32,6 +43,7 @@ void setup_memory_manager(memory_manager_t *mm){
     mm->destroy = destroy;
     mm->get_free_space = get_free_space;
     mm->get_max_block_size = get_free_space;
+    mm->print_blocks = print_blocks;
 }
 
 int rm_stack(){
@@ -46,6 +58,18 @@ int rm_stack(){
     __ocpdsz = 0;
     __stksz = 0;
     return 1;
+    // while(__m->child != NULL) __m = __m->child;
+    // while(__m->parent != NULL){
+    //     __m = __m->parent;
+    //     free_block(mem_handle_t(1, 1));
+    // }
+    // free(__m->mmt);
+    // // __m->mmt = NULL;
+    // free(__m);
+    // __m = NULL;
+    // __ocpdsz = 0;
+    // __stksz = 0;
+    // return 1;
 }
 
 int free_block(mem_handle_t h){
@@ -53,12 +77,9 @@ int free_block(mem_handle_t h){
     super_duper_stack *rm_block = __m;
     if(rm_block == NULL || rm_block->mmt == NULL) return 0;
     __ocpdsz -= rm_block->mmt->size;
-    __m = __m->parent;
+    if(__m->parent) __m = __m->parent;
     free(rm_block->mmt);
-    rm_block->child = NULL;
-    rm_block->parent = NULL;
     free(rm_block);
-    rm_block = NULL;
     __m->child = NULL;
     return 1;
     // int is_exist = 0;
